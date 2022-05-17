@@ -2,40 +2,15 @@
 
 Projet A du tc3 de l'UE INF (TD B1b).
 
-Membres du projet:
-SESTU Flavio
-CHEBIB Maxime
-NOLIN Baptiste
-D'ALLEST Côme
-ANGOT Victor
+* Membres du projet:
+    * SESTU Flavio
+    * CHEBIB Maxime
+    * NOLIN Baptiste
+    * D'ALLEST Côme
+    * ANGOT Victor
 
-Enseignant:
-CHALON René
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+* Enseignant:
+    * CHALON René
 
 ## Getting started
 
