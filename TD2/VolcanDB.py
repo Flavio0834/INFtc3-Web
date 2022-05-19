@@ -1,4 +1,5 @@
 import sqlite3
+import json
 
 class VolcanDB:
 	def __init__(self,nomDB):
@@ -18,14 +19,14 @@ class VolcanDB:
 	def get_list_of_volcanos(self):
 		try:
 			self.__cursor=self.__conn.cursor()
-			self.__cursor.execute("SELECT name FROM volcans")
+			self.__cursor.execute("SELECT name,lat,lon FROM volcans")
 			volcanos=self.__cursor.fetchall()
-			res=f"Liste des {len(volcanos)} volcans : \n"
+			res={}
 			i=1
 			for volcano in volcanos:
-				res+=f"[{i}] - "+volcano[0]+"\n"
+				res[str(i)]={"name":volcano[0],"lat":volcano[1],"lon":volcano[2]}
 				i+=1
-			return res
+			return json.dumps(res)
 		except Exception as err:
 			print(err)
 			return None
