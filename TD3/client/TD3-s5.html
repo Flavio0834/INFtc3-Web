@@ -1,0 +1,31 @@
+<select id="poi" name="poi" required>
+    <option value="" selected disabled hidden>Choisir...</option>
+</select>
+
+<script>
+    // Modifier cette ligne en fonction de votre projet
+    var entity_list_name = 'volcans'
+
+    var xhr = new XMLHttpRequest();
+
+    // cette fonction sera appelée lorsque la réponse du serveur sera disponible
+    xhr.onload = function () {
+
+        // récupération de l'information renvoyée par le serveur
+        var data = JSON.parse(this.responseText);
+
+        // création des options de la liste
+        for (n = 0; n < data.length; n++) {
+            d = data[n];
+            option = '<option>' + d.name + '</option>\n';
+            document.getElementById('poi').innerHTML += option;
+        }
+
+    };
+
+    // détails de la requête envoyée au serveur
+    xhr.open('GET', '/' + entity_list_name, true);
+
+    // envoi de la requête
+    xhr.send();
+</script>

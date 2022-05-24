@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>TD3-s1</title>
+    <!-- <link rel="stylesheet" href="../../css/style.css"> -->
+</head>
+
+<body>
+    <h1>Mon premier formulaire</h1>
+    Prénom : <input type="text" name="Prenom" id="prenom" /><br /><br />
+    Nom : <input type="text" name="Nom" id="nom" /><br /><br />
+    <button id="bouton">Submit Query</button>
+    <div id="reponse"></div>
+
+    <script>
+        document.getElementById('bouton').addEventListener('click', envoiformulaire);
+
+        function envoiformulaire(e) {
+            var xhr = new XMLHttpRequest();
+
+            // on récupère le nom et le prénom
+            var pr = document.getElementById('prenom').value,
+                no = document.getElementById('nom').value;
+
+            // cette fonction sera appelée lorsque la réponse du serveur sera disponible
+            xhr.onload = function () {
+
+                // récupération de l'information renvoyée par le serveur
+                var data = JSON.parse(this.responseText);
+
+                // affichage dans la zone 'reponse', du prénom et du nom récupéré par l'appel au serveur
+                document.getElementById('reponse').innerHTML = 'Bonjour ' + data.given_name + ' ' + data.family_name;
+            };
+
+            // détails de la requête envoyée au serveur
+            xhr.open('GET', '/toctoc/' + pr + '/' + no, true);
+
+            // envoi de la requête
+            xhr.send();
+        }
+    </script>
+</body>
+
+</html>

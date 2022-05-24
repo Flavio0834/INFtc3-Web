@@ -45,9 +45,9 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
     # On envoie un document avec le nom et le prénom
     def send_toctoc(self):
-        # on envoie un document HTML contenant un seul paragraphe
-        self.send_html(
-            "<p>Bonjour {} {}</p>".format(self.params["Prenom"], self.params["Nom"])
+        # on renvoie les paramètres en JSON
+        self.send_json(
+            {"given_name": self.path_info[1], "family_name": self.path_info[2]}
         )
 
     # on envoie un document html dynamique
@@ -57,6 +57,10 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             self.path_info[0], content
         )
         self.send(html, headers)
+
+    def send_json(self, content):
+        headers = [("Content-Type", "application/json;charset=utf-8")]
+        self.send(json.dumps(content), headers)
 
     # on envoie le document statique demandé
     def send_static(self):
