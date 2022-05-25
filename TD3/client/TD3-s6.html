@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>TD3-s6</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="images/falcon.png">
+</head>
+
+<body>
+    <h1> Ma super nApplication </h1>
+
+    Liste de volcans : <select id="poi" name="poi" required>
+        <option value="" selected disabled hidden>Choisir...</option>
+    </select>
+
+    <div id="reponse"></div>
+
+    <script>
+        // Partie liste des volcans
+
+        // Modifier cette ligne en fonction de votre projet
+        var entity_list_name = 'volcans'
+
+        var xhr = new XMLHttpRequest();
+
+        // cette fonction sera appelée lorsque la réponse du serveur sera disponible
+        xhr.onload = function () {
+
+            // récupération de l'information renvoyée par le serveur
+            var data = JSON.parse(this.responseText);
+
+            // création des options de la liste
+            for (n = 0; n < data.length; n++) {
+                d = data[n];
+                option = '<option>' + d.name + '</option>\n';
+                document.getElementById('poi').innerHTML += option;
+            }
+
+        };
+
+        // détails de la requête envoyée au serveur
+        xhr.open('GET', '/' + entity_list_name, true);
+
+        // envoi de la requête
+        xhr.send();
+
+
+        // Partie volcan
+
+        var entity_name = entity_list_name.substring(0, entity_list_name.length - 1);
+
+        // Gestionnaire d'événement pour le choix dans la liste
+        document.getElementById('poi').addEventListener('change', option_selected);
+
+        function option_selected(e) {
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                var data = JSON.parse(this.responseText);
+
+                // Exploitation de la réponse
+                var html = '<div id="flex-container"><img src="' + data.photo + '">';
+                html += '<div id="flex-text-child"><h2><a href="' + data.wiki + '">' + e.target.value + '</a></h2>';
+                html += '<div><a href="' + data.dbpedia + '">' + data.dbpedia + '</a><br></div>';
+                html += '<div id="other">';
+                for (k in data.other) {
+                    html += '<span><b>' + k + '</b>: ' + data.other[k] + '</span><br>';
+                }
+                html += '</div></div></div>'
+                html += '<p>' + data.abstract + '</p>'
+
+                document.getElementById('reponse').innerHTML = html;
+            };
+            xhr.open('GET', '/' + entity_name + '/' + e.target.value, true);
+            xhr.send();
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,31 +1,47 @@
-<select id="poi" name="poi" required>
-    <option value="" selected disabled hidden>Choisir...</option>
-</select>
+<!DOCTYPE html>
+<html>
 
-<script>
-    // Modifier cette ligne en fonction de votre projet
-    var entity_list_name = 'volcans'
+<head>
+    <meta charset="utf-8">
+    <title>TD3-s5</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="images/layers.png">
+</head>
 
-    var xhr = new XMLHttpRequest();
+<body>
+    <h1> Ma super nApplication </h1>
 
-    // cette fonction sera appelée lorsque la réponse du serveur sera disponible
-    xhr.onload = function () {
+    <select id="poi" name="poi" required>
+        <option value="" selected disabled hidden>Choisir...</option>
+    </select>
 
-        // récupération de l'information renvoyée par le serveur
-        var data = JSON.parse(this.responseText);
+    <script>
+        // Modifier cette ligne en fonction de votre projet
+        var entity_list_name = 'volcans'
 
-        // création des options de la liste
-        for (n = 0; n < data.length; n++) {
-            d = data[n];
-            option = '<option>' + d.name + '</option>\n';
-            document.getElementById('poi').innerHTML += option;
-        }
+        var xhr = new XMLHttpRequest();
 
-    };
+        // cette fonction sera appelée lorsque la réponse du serveur sera disponible
+        xhr.onload = function () {
 
-    // détails de la requête envoyée au serveur
-    xhr.open('GET', '/' + entity_list_name, true);
+            // récupération de l'information renvoyée par le serveur
+            var data = JSON.parse(this.responseText);
 
-    // envoi de la requête
-    xhr.send();
-</script>
+            // création des options de la liste
+            for (n = 0; n < data.length; n++) {
+                d = data[n];
+                option = '<option>' + d.name + '</option>\n';
+                document.getElementById('poi').innerHTML += option;
+            }
+
+        };
+
+        // détails de la requête envoyée au serveur
+        xhr.open('GET', '/' + entity_list_name, true);
+
+        // envoi de la requête
+        xhr.send();
+    </script>
+</body>
+
+</html>

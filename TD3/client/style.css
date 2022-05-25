@@ -1,6 +1,6 @@
 ﻿/* fond de page */
 body {
-  background-image: linear-gradient(0deg, slateblue, black, black);
+  background-image: linear-gradient(0deg, #d83636, black, black);
   background-repeat: no-repeat;
   color: white;
   height: 100vh;
@@ -11,13 +11,13 @@ body {
 }
 
 /* bandeau de titre */
-h1 { 
+h1 {
   color: white;
   border: none;
   box-shadow: none;
-  background-color: rgba(255,255,255,0.3);
-  border-top: 3px solid rgba(255,255,255,0.6);
-  border-bottom: 3px solid rgba(255,255,255,0.6);
+  background-color: rgba(255, 255, 255, 0.3);
+  border-top: 3px solid rgba(255, 255, 255, 0.6);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.6);
   margin-top: 1.33em;
   text-shadow: 3px 3px 3px black;
   padding-top: 0.5em;
@@ -26,14 +26,25 @@ h1 {
 }
 
 /* contenu de la page */
-body > * {   padding-left: 10px; }
+body>* {
+  padding-left: 10px;
+}
 
 /* polices de caractères */
-body { font-family: Trebuchet MS, sans-serif; }
+body {
+  font-family: Trebuchet MS, sans-serif;
+}
 
 /* positionnement des champs */
-label { display: block; }
-label span { display: inline-block; width: 5em; height: 1.5em; }
+label {
+  display: block;
+}
+
+label span {
+  display: inline-block;
+  width: 5em;
+  height: 1.5em;
+}
 
 /*
 input, textarea {
@@ -68,10 +79,28 @@ a {
 a.delete:hover {
   color: red;
 }
-#map { height: 400px; width: 600px; }
+
+#map {
+  height: 400px;
+  width: 600px;
+}
 
 img {
-	float: right;
-	width: 200px;
-	margin-left: 20px;
+  width: 300px;
+  margin-right: 20px;
 }
+
+#flex-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: left;
+  min-width: 0;
+  margin: auto;
+  margin-top: 20px;
+}
+
+/* #flex-text-child {
+
+} */
