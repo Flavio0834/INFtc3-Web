@@ -25,6 +25,11 @@ h1 {
   margin-bottom: 1.33em;
 }
 
+#conteneur
+{  
+  display: flex;  
+}
+
 /* contenu de la page */
 body>* {
   padding-left: 10px;
@@ -81,8 +86,8 @@ a.delete:hover {
 }
 
 #map {
-  height: 600px;
-  width: 900px;
+  height: 400px;
+  width: 600px;
 }
 
 img {

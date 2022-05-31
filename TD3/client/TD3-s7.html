@@ -12,99 +12,107 @@
 
 <body>
     <h1> Volcans historiques </h1>
+    
+    
+    <div id="conteneur">
+    <!-- Aligne la la map et la reponse sur la même ligne -->
 
-    <div id="map">
+        <div id="map"></div>
+
+        <div id="reponse"></div>
+
+        <div id="test">blabla</div>
+    
     </div>
 
-    <div id="reponse"></div>
 
-    <script>
-        // Partie liste des volcans
-
-
-        // variable globale pour le nom du site sélectionné via le marqueur
-        var site_name;
-
-        // Création d'une carte dans la balise div "map",
-        // et position de la vue sur un point donné et un niveau de zoom
-        var map = L.map('map').setView([0, 0], 1);
-
-        // Ajout d'une couche de dalles OpenStreetMap
-        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+        <script>
+            // Partie liste des volcans
 
 
+            // variable globale pour le nom du site sélectionné via le marqueur
+            var site_name;
 
-        // Modifier cette ligne en fonction de votre projet
-        var entity_list_name = 'volcans'
+            // Création d'une carte dans la balise div "map",
+            // et position de la vue sur un point donné et un niveau de zoom
+            var map = L.map('map').setView([0, 0], 1);
 
-        var xhr = new XMLHttpRequest();
-
-        // cette fonction sera appelée lorsque la réponse du serveur sera disponible
-        xhr.onload = function () {
-
-            // récupération de l'information renvoyée par le serveur
-            var data = JSON.parse(this.responseText);
-
-            // création des options de la liste
-            for (n = 0; n < data.length; n++) {
-                // insertion d'un marqueur à la position du lieu,
-                // attachement d'une popup, capture de l'événement 'clic'
-                // ajout d'une propriété personnalisée au marqueur avec
-                // l'identifiant unique du point d'intérêt
-                L.marker([data[n].lat, data[n].lon]).addTo(map)
-                    .bindPopup('Lieu = ' + data[n].name)
-                    .addEventListener('click', OnMarkerClick)
-                    .idnum = data[n].name;
-            }
-
-        };
-
-        // détails de la requête envoyée au serveur
-        xhr.open('GET', '/' + entity_list_name, true);
-
-        // envoi de la requête
-        xhr.send();
+            // Ajout d'une couche de dalles OpenStreetMap
+            L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
 
 
-        // Partie volcan
 
-        var entity_name = entity_list_name.substring(0, entity_list_name.length - 1);
+            // Modifier cette ligne en fonction de votre projet
+            var entity_list_name = 'volcans'
 
-        function OnMarkerClick(e) {
             var xhr = new XMLHttpRequest();
+
+            // cette fonction sera appelée lorsque la réponse du serveur sera disponible
             xhr.onload = function () {
+
+                // récupération de l'information renvoyée par le serveur
                 var data = JSON.parse(this.responseText);
-                /* print data to console */
-                console.log(data);
 
-                // Exploitation de la réponse
-                var html = '<div id="flex-container"><img src="' + data.photo + '">';
-                html += '<div id="flex-text-child"><h2><a href="' + data.wiki + '">' + e.target.idnum + '</a></h2>';
-                html += '<div><a href="' + data.dbpedia + '">' + data.dbpedia + '</a><br></div>';
-                html += '<div id="other">';
-                for (k in data.other) {
-                    html += '<span><b>' + k + '</b>: ' + data.other[k] + '</span><br>';
+                // création des options de la liste
+                for (n = 0; n < data.length; n++) {
+                    // insertion d'un marqueur à la position du lieu,
+                    // attachement d'une popup, capture de l'événement 'clic'
+                    // ajout d'une propriété personnalisée au marqueur avec
+                    // l'identifiant unique du point d'intérêt
+                    L.marker([data[n].lat, data[n].lon]).addTo(map)
+                        .bindPopup('Lieu = ' + data[n].name)
+                        .addEventListener('click', OnMarkerClick)
+                        .idnum = data[n].name;
                 }
-                html += '</div></div></div>'
-                html += '<p>' + data.abstract + '</p>'
 
-                document.getElementById('reponse').innerHTML = html;
             };
 
-            /* 
-            site_name = e.target.idnum
+            // détails de la requête envoyée au serveur
+            xhr.open('GET', '/' + entity_list_name, true);
 
-            // Envoi de la requête Ajax pour la récupération de la description du lieu de numéro idnum
-            xhr.open('GET', '/description/' + site_name, true);
-            xhr.send(); 
-            */
-
-            xhr.open('GET', '/' + entity_name + '/' + e.target.idnum, true);
+            // envoi de la requête
             xhr.send();
-        }
-    </script>
+
+
+            // Partie volcan
+
+            var entity_name = entity_list_name.substring(0, entity_list_name.length - 1);
+
+            function OnMarkerClick(e) {
+                var xhr = new XMLHttpRequest();
+                xhr.onload = function () {
+                    var data = JSON.parse(this.responseText);
+                    /* print data to console */
+                    console.log(data);
+
+                    // Exploitation de la réponse
+                    var html = '<div id="flex-container"><img src="' + data.photo + '">';
+                    html += '<div id="flex-text-child"><h2><a href="' + data.wiki + '">' + e.target.idnum + '</a></h2>';
+                    html += '<div><a href="' + data.dbpedia + '">' + data.dbpedia + '</a><br></div>';
+                    html += '<div id="other">';
+                    for (k in data.other) {
+                        html += '<span><b>' + k + '</b>: ' + data.other[k] + '</span><br>';
+                    }
+                    html += '</div></div></div>'
+                    html += '<p>' + data.abstract + '</p>'
+
+                    document.getElementById('reponse').innerHTML = html;
+                };
+
+                /* 
+                site_name = e.target.idnum
+
+                // Envoi de la requête Ajax pour la récupération de la description du lieu de numéro idnum
+                xhr.open('GET', '/description/' + site_name, true);
+                xhr.send(); 
+                */
+
+                xhr.open('GET', '/' + entity_name + '/' + e.target.idnum, true);
+                xhr.send();
+            }
+        </script>
 
 </body>
 
