@@ -67,7 +67,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         # Method not supported
         else:
             self.send_error(405)
-    
+
     # On envoie un document avec le nom et le prénom
     def send_toctoc(self):
         # on envoie un document HTML contenant un seul paragraphe
@@ -195,7 +195,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # requête dans la base pour récupérer les infos de l'entité
         c = conn.cursor()
-        c.execute("SELECT * FROM {} WHERE name=?".format(entity_list_name), (name,))
+        c.execute("SELECT * FROM ? WHERE name=?", (entity_list_name, name))
         data = c.fetchone()
 
         # construction de la réponse
