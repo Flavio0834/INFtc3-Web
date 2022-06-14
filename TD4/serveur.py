@@ -13,27 +13,23 @@ from urllib.parse import unquote_plus, urlparse, parse_qs, unquote_plus
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
     # version du serveur
-    server_version = "TD2-s7"
+    server_version = "v1"
 
     # sous-répertoire racine des documents statiques
     static_dir = "/client"
 
-    ROOT_LOGIN = "root"
+    # credentials du super utilisateur
+    ROOT_LOGIN =    "root"
     ROOT_PASSWORD = "toor"
 
-    #
-    # On surcharge la méthode qui traite les requêtes GET
-    #
     def do_GET(self):
+        """Cette méthode joue le rôle d'un routeur pour les requêtes GET
+        (On surcharge la méthode qui traite les requêtes GET)"""
         self.init_params()
 
         # le chemin d'accès commence par /time
         if self.path.startswith("/time"):
             self.send_time()
-
-        # On se débarasse une bonne fois pour toutes du cas favicon.ico
-        elif len(self.path_info) > 0 and self.path_info[0] == "favicon.ico":
-            self.send_error(204)
 
         # le chemin d'accès commence par le nom de projet au pluriel
         elif len(self.path_info) > 0 and self.path_info[0] == entity_list_name:
@@ -47,30 +43,22 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         elif len(self.path_info) > 1 and self.path_info[0] == "commentaires":
             self.send_commentaires_json()
 
-        # ou pas...
         else:
             self.send_static()
 
-    #
-    # On surcharge la méthode qui traite les requêtes HEAD
-    #
     def do_HEAD(self):
+        """Surcharge la méthode qui traite les requêtes HEAD. Cette méthode renvoie les headers qu'une requête renvoie pour un endpoint précis."""
         self.send_static()
 
-    # méthode pour traiter les requêtes POST
     def do_POST(self):
+        """idem on route les requêtes POST vers leurs services respectifs (on surchage la méthode qui traite les requêtes POST)"""
         self.init_params()
 
-        # prénom et nom dans la chaîne de requête dans le corps
-        if self.path_info[0] == "toctoc":
-            self.send_toctoc()
-
-        elif self.path_info[0] == "commentaire":
+        # Si le chemin d'accès commence par commentaires, suivi du point d'interêt on ajoute un commentaire
+        if len(self.path_info) > 0 and self.path_info[0] == "commentaire":
             self.send_commentaire()
-
-        # Method not supported
         else:
-            self.send_error(405)
+            self.send_error(405)  # Méthode non supporté
             
     def do_DELETE(self):
         """routeurs des requêtes DELETE"""
@@ -80,13 +68,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             self.delete_commentaire()
         else:
             self.send_error(404)  # Ressource non trouvée
-
-    # On envoie un document avec le nom et le prénom
-    def send_toctoc(self):
-        # on envoie un document HTML contenant un seul paragraphe
-        self.send_html(
-            "<p>Bonjour {} {}</p>".format(self.params["Prenom"], self.params["Nom"])
-        )
 
     def send_commentaire(self):
         """Requête POST pour ajouter un commentaire"""
@@ -115,22 +96,21 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 "Le corps de la requête ne correspond pas à la spécification il doit contenir les champs suivants : pseudo, password, site, message, date",
             )
 
-        if self.est_connectee(pseudo, password):
+        if self.est_connectee(pseudo, password): # on vérifie que l'utilisateur est connecté
             c = conn.cursor()
             try:
                 sql = (
                     "INSERT INTO commentaires (pseudo, site, timestamp, message, date) VALUES (?,?,?,?,?)",
                     (pseudo, site_name, timestamp, message, date),
                 )
-                c.execute(*sql)
+                c.execute(*sql) # on insère le commentaire dans la base de données
                 conn.commit()
-                self.send_response(200)
-                self.send_json(data)
+                self.send_response(200) 
+                self.send_json(data) 
             except Exception as SQLError:
                 print(SQLError)
                 self.send_error(400, "Erreur SQL")
 
-    # on envoie un document html dynamique
     def send_html(self, content):
         headers = [("Content-Type", "text/html;charset=utf-8")]
         html = '<!DOCTYPE html><title>{}</title><meta charset="utf-8">{}'.format(
@@ -138,9 +118,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         )
         self.send(html, headers)
 
-    #
-    # On envoie le document statique demandé
-    #
     def send_static(self):
 
         # on modifie le chemin d'accès en insérant un répertoire préfixe
@@ -153,13 +130,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         else:
             http.server.SimpleHTTPRequestHandler.do_GET(self)
 
-        # # solution alternative plus élégante :
-        # method = 'do_{}'.format(self.command)
-        # getattr(http.server.SimpleHTTPRequestHandler,method)(self)
-
-    #
-    # On envoie un document avec l'heure
-    #
     def send_time(self):
 
         # on récupère l'heure
@@ -180,9 +150,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         # on envoie
         self.send(body, headers)
 
-    #
-    # On envoie la liste des entités
-    #
     def send_list(self):
 
         # on effectue une requête dans la base pour récupérer la liste des entités
@@ -194,9 +161,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         info = [dict(d) for d in data]
         self.send_json(info)
 
-    #
-    # On envoie un document au format json
-    #
     def send_json(self, data):
         headers = [("Content-Type", "application/json")]
         self.send(json.dumps(data), headers)
@@ -233,6 +197,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             assert comment_id!=''
             assert pseudo!=''
             assert password!=''
+
         except Exception as InvalidComment:
             print(InvalidComment)
             self.send_error(
@@ -241,7 +206,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 "Le corps de la requête ne correspond pas à la spécification \
                 il doit contenir les champs suivants : id, pseudo, password",
             )
-        # la date est facultative
 
         if (
             self.est_connectee(pseudo, password)
@@ -258,9 +222,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 print(SQLError)
                 self.send_error(400, "Erreur SQL")
 
-    #
-    # On envoie les infos d'une entité
-    #
     def send_data(self, name):
 
         # requête dans la base pour récupérer les infos de l'entité
@@ -291,9 +252,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             # envoi de la réponse
             self.send_json(info)
 
-    #
-    # On envoie les entêtes et le corps fourni
-    #
     def send(self, body, headers=[]):
 
         # on encode la chaine de caractères à envoyer
@@ -310,19 +268,15 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         # on envoie le corps de la réponse
         self.wfile.write(encoded)
 
-    #
-    # analyse d'une chaîne de requête pour récupérer les paramètres
-    #
     def parse_qs(self, query_string):
+        """Parse la requête et renvoie un dictionnaire de paramètres"""
         self.params = parse_qs(query_string)
         for k in self.params:
             if len(self.params[k]) == 1:
                 self.params[k] = self.params[k][0]
 
-    #
-    # on analyse la requête pour initialiser nos paramètres
-    #
     def init_params(self):
+        """Initialise les paramètres de la requête"""
         # analyse de l'adresse
         info = urlparse(self.path)
         self.path_info = [
@@ -348,7 +302,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         print("body =", length, ctype, self.body)
         print("params =", self.params)
 
-    # Penser à vérifier que l'email est fournie à la création du compte
 
     def est_connectee(self, pseudo, password):
         """Vérifie si un utilisateur est connecté"""
@@ -385,7 +338,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def appartient(self, comment_id, pseudo):
         """Vérifie un utilisateur a les droits pour supprimer un commentaire"""
 
-        if pseudo == self.ROOT_LOGIN and password == self.ROOT_PASSWORD:  # le super utilisateur à tous les droits
+        if pseudo == self.ROOT_LOGIN:  # le super utilisateur à tous les droits
             return True
 
         else:
