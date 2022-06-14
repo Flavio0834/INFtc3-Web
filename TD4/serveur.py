@@ -71,6 +71,15 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         # Method not supported
         else:
             self.send_error(405)
+            
+    def do_DELETE(self):
+        """routeurs des requêtes DELETE"""
+        self.init_params()
+
+        if len(self.path_info) > 1 and self.path_info[0] == "commentaire":
+            self.delete_commentaire()
+        else:
+            self.send_error(404)  # Ressource non trouvée
 
     # On envoie un document avec le nom et le prénom
     def send_toctoc(self):
@@ -211,6 +220,43 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as SQLError:
             print(SQLError)
             self.send_error(400, "Erreur SQL")
+            
+    def delete_commentaire(self):
+        """Requête DELETE pour supprimer un commentaire"""
+
+        data = self.params
+        # On vérifie que les données fournie correspondent bien à la requête
+        try:
+            comment_id = self.path_info[1]
+            pseudo = data["pseudo"]
+            password = data["password"]
+            assert comment_id!=''
+            assert pseudo!=''
+            assert password!=''
+        except Exception as InvalidComment:
+            print(InvalidComment)
+            self.send_error(
+                422,
+                "Body invalide",
+                "Le corps de la requête ne correspond pas à la spécification \
+                il doit contenir les champs suivants : id, pseudo, password",
+            )
+        # la date est facultative
+
+        if (
+            self.est_connectee(pseudo, password)
+            and self.appartient(comment_id, pseudo)
+        ):
+            c = conn.cursor()
+            try:
+                sql = ("DELETE FROM commentaires WHERE id = ?",(comment_id,))
+                c.execute(*sql)
+                conn.commit()
+                # on indique que la commande s'est bien effectuée (send_response ne fonctionne pas mais le status reste le bon)
+                self.send_json({"Status": "Done"})
+            except Exception as SQLError:
+                print(SQLError)
+                self.send_error(400, "Erreur SQL")
 
     #
     # On envoie les infos d'une entité
@@ -335,6 +381,46 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(400, "Erreur SQL")
                 verified = False
             return verified
+        
+    def appartient(self, comment_id, pseudo):
+        """Vérifie un utilisateur a les droits pour supprimer un commentaire"""
+
+        if pseudo == self.ROOT_LOGIN and password == self.ROOT_PASSWORD:  # le super utilisateur à tous les droits
+            return True
+
+        else:
+            b = True  # True si l'utilisateur a les droits sur le commentaire False sinon
+            c = conn.cursor()
+            try:
+                # On vérifie si le commentaire existe
+                req = ("SELECT * FROM commentaires WHERE id = ?",(comment_id,))
+                c.execute(*req)
+                r = c.fetchone()
+
+                if r is None:
+                    b = False
+                    self.send_error(404, "Le commentaire n'existe pas")
+
+                else:  # il existe
+                    req = ('SELECT * FROM commentaires WHERE id = ? AND pseudo = ?',(
+                        comment_id, pseudo
+                    ))
+
+                    c.execute(*req)
+                    r = c.fetchone()
+
+                    if r is None:  # Le commentaire n'est pas celui de l'utilisateur
+                        b = False
+                        self.send_error(
+                            401,
+                            "Droits insuffisants",
+                            "Vous n'avez pas la permission pour supprimer ce commentaire",
+                        )
+            except Exception as SQLError:
+                print(SQLError)
+                self.send_error(400, "Erreur SQL")
+                b = False
+            return b
 
 
 def get_timestamp():
