@@ -57,6 +57,8 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         # Si le chemin d'accès commence par commentaires, suivi du point d'interêt on ajoute un commentaire
         if len(self.path_info) > 0 and self.path_info[0] == "commentaire":
             self.send_commentaire()
+        elif len(self.path_info) > 0 and self.path_info[0] == "utilisateur":
+            self.POST_utilisateur()
         else:
             self.send_error(405)  # Méthode non supporté
             
@@ -110,6 +112,46 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as SQLError:
                 print(SQLError)
                 self.send_error(400, "Erreur SQL")
+
+    def send_utilisateur(self):
+        """Requête POST pour ajouter un utilisateur à la base de données"""
+
+        data = self.params
+
+        # On vérifie que les données fournie correspondent bien à la requête
+        try:
+            assert data["user_pseudo"] != ""
+            assert data["email"] != ""
+            assert data["user_password"] != ""
+
+        except Exception as InvalidUser:
+            print(InvalidUser)
+            self.send_error(
+                422,
+                "Body invalide",
+                "Le corps de la requête ne correspond pas à la spécification il doit contenir les champs suivants : user_pseudo, email et user_password",
+            )
+
+        # On vérifie que l'utilisateur n'existe pas déjà
+
+        if self.est_nouveau(data["user_pseudo"], data["email"]):
+            c = conn.cursor()
+            try:
+
+                c.execute(
+                    "INSERT INTO utilisateurs (pseudo, email, pwd) VALUES (?,?,?)",
+                    [data["user_pseudo"], data["email"], data["user_password"]],
+                )
+                conn.commit()
+                self.send_response(200)
+            except Exception as SQLError:
+                print(SQLError)
+                self.send_error(
+                    400,
+                    "Erreur SQL",
+                    "Le nouvel utilisateur n'a pas pu être ajouté",
+                )
+
 
     def send_html(self, content):
         headers = [("Content-Type", "text/html;charset=utf-8")]
@@ -194,9 +236,9 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             comment_id = self.path_info[1]
             pseudo = data["pseudo"]
             password = data["password"]
-            assert comment_id!=''
-            assert pseudo!=''
-            assert password!=''
+            assert comment_id != ""
+            assert pseudo != ""
+            assert password != ""
 
         except Exception as InvalidComment:
             print(InvalidComment)
@@ -277,6 +319,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def init_params(self):
         """Initialise les paramètres de la requête"""
+
         # analyse de l'adresse
         info = urlparse(self.path)
         self.path_info = [
