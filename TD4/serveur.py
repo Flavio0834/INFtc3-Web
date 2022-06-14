@@ -1,9 +1,8 @@
-# TD2-s7.py
-
 import http.server
 import socketserver
 import sqlite3
 import json
+import datetime
 
 from urllib.parse import unquote_plus, urlparse, parse_qs, unquote_plus
 
@@ -18,6 +17,9 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
     # sous-répertoire racine des documents statiques
     static_dir = "/client"
+
+    ROOT_LOGIN = "root"
+    ROOT_PASSWORD = "toor"
 
     #
     # On surcharge la méthode qui traite les requêtes GET
@@ -74,8 +76,46 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         )
 
     def send_commentaire(self):
-        self.send_html(
-            "<p>Bonjour</p>")
+        """Requête POST pour ajouter un commentaire"""
+
+        data = self.params  # paramètres de la requête POST
+
+        # On vérifie que les données sont de la bonne forme
+        try:
+            pseudo = data["pseudo"]
+            password = data["password"]
+            site_name = data["site"]
+            message = data["message"]
+            date = data["date"]
+            timestamp = get_timestamp()
+            assert pseudo != ""
+            assert password != ""
+            assert site_name != ""
+            assert message != ""
+            assert date != ""
+
+        except Exception as InvalidComment:
+            print(InvalidComment)
+            self.send_error(
+                422,
+                "Body invalide",
+                "Le corps de la requête ne correspond pas à la spécification il doit contenir les champs suivants : pseudo, password, site, message, date",
+            )
+
+        if self.est_connectee(pseudo, password):
+            c = conn.cursor()
+            try:
+                sql = (
+                    "INSERT INTO commentaires (pseudo, site, timestamp, message, date) VALUES (?,?,?,?,?)",
+                    (pseudo, site_name, timestamp, message, date),
+                )
+                c.execute(*sql)
+                conn.commit()
+                self.send_response(200)
+                self.send_json(data)
+            except Exception as SQLError:
+                print(SQLError)
+                self.send_error(400, "Erreur SQL")
 
     # on envoie un document html dynamique
     def send_html(self, content):
@@ -134,7 +174,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # on effectue une requête dans la base pour récupérer la liste des entités
         c = conn.cursor()
-        c.execute("SELECT name, lat, lon FROM {}".format(entity_list_name))
+        c.execute("SELECT name, lat, lon FROM ?", (entity_list_name,))        
         data = c.fetchall()
 
         # on construit la réponse en json
@@ -238,6 +278,44 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         print("body =", length, ctype, self.body)
         print("params =", self.params)
 
+    # Penser à vérifier que l'email est fournie à la création du compte
+
+    def est_connectee(self, pseudo, password):
+        """Vérifie si un utilisateur est connecté"""
+
+        if pseudo == self.ROOT_LOGIN and self.ROOT_PASSWORD == password:
+            # le compte root ne figure pas dans la bdd mais dans les attributs de la classe
+            return True
+        else:
+            verified = True
+            c = conn.cursor()
+            try:
+                sql = (
+                    "SELECT * FROM utilisateurs WHERE pseudo = ? AND pwd = ?",
+                    (pseudo, password),
+                )
+                c.execute(*sql)
+                r = c.fetchone()
+                if r is None:
+                    sql = ("SELECT * FROM utilisateurs WHERE pseudo = ?", (pseudo,))
+                    c.execute(*sql)
+                    r = c.fetchone()
+                    if r is None:
+                        self.send_error(401, "Utilisateur inconnu")
+                        verified = False
+                    else:
+                        self.send_error(401, "Mot de passe incorrect")
+                        verified = False
+            except Exception as SQLError:
+                print(SQLError)
+                self.send_error(400, "Erreur SQL")
+                verified = False
+            return verified
+
+
+def get_timestamp():
+    """Retourne le timestamp à l'heure de son activation"""
+    return datetime.datetime.timestamp(datetime.datetime.now())
 #
 # MODIFIER ICI EN FONCTION DU NOM DE VOTRE PROJET
 #
