@@ -209,7 +209,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         if (
             self.est_connectee(pseudo, password)
-            and self.appartient(comment_id, pseudo)
+            and self.appartient(comment_id, pseudo, password)
         ):
             c = conn.cursor()
             try:
@@ -335,10 +335,10 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 verified = False
             return verified
         
-    def appartient(self, comment_id, pseudo):
+    def appartient(self, comment_id, pseudo, password):
         """Vérifie un utilisateur a les droits pour supprimer un commentaire"""
 
-        if pseudo == self.ROOT_LOGIN:  # le super utilisateur à tous les droits
+        if pseudo == self.ROOT_LOGIN and password == self.ROOT_PASSWORD:  # le super utilisateur à tous les droits
             return True
 
         else:
@@ -379,7 +379,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 def get_timestamp():
     """Retourne le timestamp à l'heure de son activation"""
     return datetime.datetime.timestamp(datetime.datetime.now())
-    
+
 def init_db():
     """
     Méthode qui initialise les tables utilisateurs et commentaires de la base de données
