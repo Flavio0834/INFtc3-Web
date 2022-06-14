@@ -266,6 +266,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 )
                 conn.commit()
                 self.send_response(200)
+                self.send_json(data)
             except Exception as SQLError:
                 print(SQLError)
                 self.send_error(
@@ -304,8 +305,9 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 sql = ("DELETE FROM commentaires WHERE id = ?", (comment_id,))
                 c.execute(*sql)
                 conn.commit()
-                # on indique que la commande s'est bien effectuée (send_response ne fonctionne pas mais le status reste le bon)
-                self.send_json({"Status": "Done"})
+                # on indique que la commande s'est bien effectuée
+                self.send_response(204)
+                self.send_json({})
             except Exception as SQLError:
                 print(SQLError)
                 self.send_error(400, "Erreur SQL")

@@ -4,13 +4,13 @@
 <head>
     <meta charset="utf-8" />
     <title>Volcanophilia</title>
+    <link rel="icon" type="image/png" href="images/falcon.png" />
     <script src="leaflet.js"></script>
     <script src="apputils.js"></script>
     <script src="comments.js"></script>
     <link rel="stylesheet" type="text/css" href="leaflet.css" />
     <link rel="stylesheet" type="text/css" href="style.css" />
     <link rel="stylesheet" type="text/css" href="comments.css" />
-    <link rel="icon" type="image/png" href="images/falcon.png" />
 </head>
 
 <body>
@@ -24,6 +24,12 @@
     <button id="show_comments">Commentaires</button>
 
     <div id="messages"></div>
+
+    <div id="pwd_request" class="popup">
+        <header id="pwd_request_header" class="handle">Entrer le mot de passe</header>
+        <label><span>password : </span><input id="enter_pwd" type="password" /></label>
+        <footer><button id="confirm_pwd">Ok</button></footer>
+    </div>
 
     <script>
         // Partie liste des volcans
