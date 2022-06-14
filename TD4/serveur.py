@@ -58,7 +58,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         if len(self.path_info) > 0 and self.path_info[0] == "commentaire":
             self.send_commentaire()
         elif len(self.path_info) > 0 and self.path_info[0] == "utilisateur":
-            self.POST_utilisateur()
+            self.send_utilisateur()
         else:
             self.send_error(405)  # Méthode non supporté
 
@@ -130,7 +130,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # on effectue une requête dans la base pour récupérer la liste des entités
         c = conn.cursor()
-        c.execute("SELECT name, lat, lon FROM ?", (entity_list_name,))
+        c.execute("SELECT name, lat, lon FROM {}".format(entity_list_name))
         data = c.fetchall()
 
         # on construit la réponse en json
@@ -141,7 +141,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # requête dans la base pour récupérer les infos de l'entité
         c = conn.cursor()
-        c.execute("SELECT * FROM ? WHERE name=?", (entity_list_name, name))
+        c.execute("SELECT * FROM {} WHERE name=?".format(entity_list_name), (name,))
         data = c.fetchone()
 
         # construction de la réponse
@@ -384,6 +384,45 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(400, "Erreur SQL")
                 b = False
             return b
+
+    def est_nouveau(self, pseudo, email):
+        """Vérifie si un utilisateur n'existe pas déjà.
+        Dans ce programme, un utilisateur est défini par son pseudo et son email"""
+
+        if pseudo == self.ROOT_LOGIN:
+            return False
+        else:
+            nouveau = True
+            c = conn.cursor()
+            try:
+                sql = (
+                    "SELECT * FROM utilisateurs WHERE pseudo= ?",
+                    (pseudo,),
+                )  # On vérifie si le pseudo existe déjà
+                c.execute(*sql)
+                r = c.fetchone()  # on stocke le résultat dans r
+                if r is not None:  # le pseudo est déjà attribué
+                    nouveau = False
+                    self.send_error(
+                        401,
+                        "Pseudo déjà utilisé",
+                        "Ce pseudo existe déjà. Veuillez en choisir un autre",
+                    )
+                else:
+                    sql = ("SELECT * FROM utilisateurs WHERE email= ?", (email,))
+                    c.execute(*sql)
+                    r = c.fetchone()
+                    if r is not None:  # l'adresse email est déjà attribuée
+                        nouveau = False
+                        self.send_error(
+                            401,
+                            "Adresse mail déjà utilisée",
+                            "Cette adresse-mail est déjà utilisée. Veuillez en choisir une autre",
+                        )
+            except Exception as SQL_error:
+                print(SQL_error)
+                nouveau = False
+            return nouveau
 
     def parse_qs(self, query_string):
         """Parse la requête et renvoie un dictionnaire de paramètres"""
