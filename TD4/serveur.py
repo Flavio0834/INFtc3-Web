@@ -3,9 +3,9 @@ import socketserver
 import sqlite3
 import json
 import datetime
-
 from urllib.parse import unquote_plus, urlparse, parse_qs
 
+PORT = 8080
 
 # Définition du nouveau handler
 
@@ -501,5 +501,5 @@ if __name__ == "__main__":
     init_db()  # création des tables utilisateurs et commentaires si elles n'existent pas
 
     # Instanciation et lancement du serveur
-    httpd = socketserver.TCPServer(("", 8081), RequestHandler)
+    httpd = socketserver.TCPServer(("", PORT), RequestHandler)
     httpd.serve_forever()
