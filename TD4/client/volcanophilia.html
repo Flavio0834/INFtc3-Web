@@ -31,6 +31,21 @@
         <footer><button id="confirm_pwd">Ok</button></footer>
     </div>
 
+    <button id="add_comment" class="show_popup" data-popup="message_editor">Laisser un message</button>
+
+    <div id="message_editor" class="resizable popup">
+        <header id="message_editor_header" class="handle">Edition d'un message</header>
+        <label><span>Pseudo : </span><input id="input_pseudo" /></label>
+        <label><span>Password : </span><input id="input_password" type="password" /></label>
+        <label><span>Date de visite : </span><input id="input_date" /></label>
+        <label><span>Message : </span><textarea id="input_message"></textarea></label>
+
+        <footer>
+            <button id="create_message">Envoyer</button>
+            <button id="hide_editor" class="hide_popup">Abandonner</button>
+        </footer>
+    </div>
+
     <script>
         // Partie liste des volcans
 
@@ -119,6 +134,7 @@
         }
 
         show_comments.addEventListener('click', display_messages);
+        create_message.addEventListener('click', post_message);
     </script>
 
 </body>
