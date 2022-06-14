@@ -3,10 +3,13 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>TD3-s6</title>
+    <title>Volcanophilia</title>
     <script src="leaflet.js"></script>
+    <script src="apputils.js"></script>
+    <script src="comments.js"></script>
     <link rel="stylesheet" type="text/css" href="leaflet.css" />
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" type="text/css" href="comments.css" />
     <link rel="icon" type="image/png" href="images/falcon.png" />
 </head>
 
@@ -17,6 +20,10 @@
     </div>
 
     <div id="reponse"></div>
+
+    <button id="show_comments">Commentaires</button>
+
+    <div id="messages"></div>
 
     <script>
         // Partie liste des volcans
@@ -93,17 +100,19 @@
                 document.getElementById('reponse').innerHTML = html;
             };
 
-            /* 
+
             site_name = e.target.idnum
 
             // Envoi de la requête Ajax pour la récupération de la description du lieu de numéro idnum
             xhr.open('GET', '/description/' + site_name, true);
-            xhr.send(); 
-            */
+            xhr.send();
+
 
             xhr.open('GET', '/' + entity_name + '/' + e.target.idnum, true);
             xhr.send();
         }
+
+        show_comments.addEventListener('click', display_messages);
     </script>
 
 </body>
