@@ -4,12 +4,12 @@ import sqlite3
 import json
 import datetime
 
-from urllib.parse import unquote_plus, urlparse, parse_qs, unquote_plus
+from urllib.parse import unquote_plus, urlparse, parse_qs
 
 
-#
 # Définition du nouveau handler
-#
+
+
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
     # version du serveur
@@ -19,7 +19,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
     static_dir = "/client"
 
     # credentials du super utilisateur
-    ROOT_LOGIN =    "root"
+    ROOT_LOGIN = "root"
     ROOT_PASSWORD = "toor"
 
     def do_GET(self):
@@ -61,7 +61,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             self.POST_utilisateur()
         else:
             self.send_error(405)  # Méthode non supporté
-            
+
     def do_DELETE(self):
         """routeurs des requêtes DELETE"""
         self.init_params()
@@ -70,6 +70,126 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             self.delete_commentaire()
         else:
             self.send_error(404)  # Ressource non trouvée
+
+    def send_html(self, content):
+        headers = [("Content-Type", "text/html;charset=utf-8")]
+        html = '<!DOCTYPE html><title>{}</title><meta charset="utf-8">{}'.format(
+            self.path_info[0], content
+        )
+        self.send(html, headers)
+
+    def send(self, body, headers=[]):
+
+        # on encode la chaine de caractères à envoyer
+        encoded = bytes(body, "UTF-8")
+
+        # on envoie la ligne de statut
+        self.send_response(200)
+
+        # on envoie les lignes d'entête et la ligne vide
+        [self.send_header(*t) for t in headers]
+        self.send_header("Content-Length", int(len(encoded)))
+        self.end_headers()
+
+        # on envoie le corps de la réponse
+        self.wfile.write(encoded)
+
+    def send_static(self):
+
+        # on modifie le chemin d'accès en insérant un répertoire préfixe
+        self.path = self.static_dir + self.path
+
+        # on appelle la méthode parent (do_GET ou do_HEAD)
+        # à partir du verbe HTTP (GET ou HEAD)
+        if self.command == "HEAD":
+            http.server.SimpleHTTPRequestHandler.do_HEAD(self)
+        else:
+            http.server.SimpleHTTPRequestHandler.do_GET(self)
+
+    def send_time(self):
+
+        # on récupère l'heure
+        time = self.date_time_string()
+
+        # on génère un document au format html
+        body = (
+            "<!doctype html>"
+            + '<meta charset="utf-8">'
+            + "<title>l'heure</title>"
+            + "<div>Voici l'heure du serveur :</div>"
+            + "<pre>{}</pre>".format(time)
+        )
+
+        # pour prévenir qu'il s'agit d'une ressource au format html
+        headers = [("Content-Type", "text/html;charset=utf-8")]
+
+        # on envoie
+        self.send(body, headers)
+
+    def send_list(self):
+
+        # on effectue une requête dans la base pour récupérer la liste des entités
+        c = conn.cursor()
+        c.execute("SELECT name, lat, lon FROM ?", (entity_list_name,))
+        data = c.fetchall()
+
+        # on construit la réponse en json
+        info = [dict(d) for d in data]
+        self.send_json(info)
+
+    def send_data(self, name):
+
+        # requête dans la base pour récupérer les infos de l'entité
+        c = conn.cursor()
+        c.execute("SELECT * FROM ? WHERE name=?", (entity_list_name, name))
+        data = c.fetchone()
+
+        # construction de la réponse
+        if data is None:
+            self.send_error(404, "{} {} non trouvée".format(entity_name, name))
+        else:
+
+            # on construit un document au format json
+            data = dict(data)
+            info = {
+                "dbpedia": data["volcano"],
+                "wiki": data["wiki"],
+                "abstract": data["abstract"],
+                "photo": data["photo"],
+                "other": {
+                    "lat": data["lat"],
+                    "lon": data["lon"],
+                    "height": data["elevation"],
+                    "date": data["eruption_date"],
+                    "year": data["eruption_year"],
+                },
+            }
+            # envoi de la réponse
+            self.send_json(info)
+
+    def send_json(self, data):
+        headers = [("Content-Type", "application/json")]
+        self.send(json.dumps(data), headers)
+
+    def send_commentaires_json(self):
+        """Envoie la liste des commentaires d'un point d'intérêt au format json"""
+
+        entity = self.path_info[1]
+        try:
+            c = conn.cursor()
+            c.execute("SELECT * FROM commentaires WHERE site = ?", (entity,))
+            data = c.fetchall()
+
+            body = json.dumps([dict(d) for d in data])  # réponse en json
+            headers = [
+                ("Content-Type", "application/json")
+            ]  # précise au client quel type de données il doit traiter
+            self.send_response(200)
+            self.send(body, headers)
+
+        except Exception as SQLError:
+            print(SQLError)
+            self.send_error(400, "Erreur SQL")
 
     def send_commentaire(self):
         """Requête POST pour ajouter un commentaire"""
@@ -98,17 +218,19 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 "Le corps de la requête ne correspond pas à la spécification il doit contenir les champs suivants : pseudo, password, site, message, date",
             )
 
-        if self.est_connectee(pseudo, password): # on vérifie que l'utilisateur est connecté
+        if self.est_connectee(
+            pseudo, password
+        ):  # on vérifie que l'utilisateur est connecté
             c = conn.cursor()
             try:
                 sql = (
                     "INSERT INTO commentaires (pseudo, site, timestamp, message, date) VALUES (?,?,?,?,?)",
                     (pseudo, site_name, timestamp, message, date),
                 )
-                c.execute(*sql) # on insère le commentaire dans la base de données
+                c.execute(*sql)  # on insère le commentaire dans la base de données
                 conn.commit()
-                self.send_response(200) 
-                self.send_json(data) 
+                self.send_response(200)
+                self.send_json(data)
             except Exception as SQLError:
                 print(SQLError)
                 self.send_error(400, "Erreur SQL")
@@ -152,81 +274,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     "Le nouvel utilisateur n'a pas pu être ajouté",
                 )
 
-
-    def send_html(self, content):
-        headers = [("Content-Type", "text/html;charset=utf-8")]
-        html = '<!DOCTYPE html><title>{}</title><meta charset="utf-8">{}'.format(
-            self.path_info[0], content
-        )
-        self.send(html, headers)
-
-    def send_static(self):
-
-        # on modifie le chemin d'accès en insérant un répertoire préfixe
-        self.path = self.static_dir + self.path
-
-        # on appelle la méthode parent (do_GET ou do_HEAD)
-        # à partir du verbe HTTP (GET ou HEAD)
-        if self.command == "HEAD":
-            http.server.SimpleHTTPRequestHandler.do_HEAD(self)
-        else:
-            http.server.SimpleHTTPRequestHandler.do_GET(self)
-
-    def send_time(self):
-
-        # on récupère l'heure
-        time = self.date_time_string()
-
-        # on génère un document au format html
-        body = (
-            "<!doctype html>"
-            + '<meta charset="utf-8">'
-            + "<title>l'heure</title>"
-            + "<div>Voici l'heure du serveur :</div>"
-            + "<pre>{}</pre>".format(time)
-        )
-
-        # pour prévenir qu'il s'agit d'une ressource au format html
-        headers = [("Content-Type", "text/html;charset=utf-8")]
-
-        # on envoie
-        self.send(body, headers)
-
-    def send_list(self):
-
-        # on effectue une requête dans la base pour récupérer la liste des entités
-        c = conn.cursor()
-        c.execute("SELECT name, lat, lon FROM ?", (entity_list_name,))        
-        data = c.fetchall()
-
-        # on construit la réponse en json
-        info = [dict(d) for d in data]
-        self.send_json(info)
-
-    def send_json(self, data):
-        headers = [("Content-Type", "application/json")]
-        self.send(json.dumps(data), headers)
-
-    def send_commentaires_json(self):
-        """Envoie la liste des commentaires d'un point d'intérêt au format json"""
-
-        entity = self.path_info[1]
-        try:
-            c = conn.cursor()
-            c.execute("SELECT * FROM commentaires WHERE site = ?",(entity,))
-            data = c.fetchall()
-
-            body = json.dumps([dict(d) for d in data])  # réponse en json
-            headers = [
-                ("Content-Type", "application/json")
-            ]  # précise au client quel type de données il doit traiter
-            self.send_response(200)
-            self.send(body, headers)
-            
-        except Exception as SQLError:
-            print(SQLError)
-            self.send_error(400, "Erreur SQL")
-            
     def delete_commentaire(self):
         """Requête DELETE pour supprimer un commentaire"""
 
@@ -249,13 +296,12 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 il doit contenir les champs suivants : id, pseudo, password",
             )
 
-        if (
-            self.est_connectee(pseudo, password)
-            and self.appartient(comment_id, pseudo, password)
+        if self.est_connectee(pseudo, password) and self.appartient(
+            comment_id, pseudo, password
         ):
             c = conn.cursor()
             try:
-                sql = ("DELETE FROM commentaires WHERE id = ?",(comment_id,))
+                sql = ("DELETE FROM commentaires WHERE id = ?", (comment_id,))
                 c.execute(*sql)
                 conn.commit()
                 # on indique que la commande s'est bien effectuée (send_response ne fonctionne pas mais le status reste le bon)
@@ -264,51 +310,80 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 print(SQLError)
                 self.send_error(400, "Erreur SQL")
 
-    def send_data(self, name):
+    def est_connectee(self, pseudo, password):
+        """Vérifie si un utilisateur est connecté"""
 
-        # requête dans la base pour récupérer les infos de l'entité
-        c = conn.cursor()
-        c.execute("SELECT * FROM ? WHERE name=?", (entity_list_name, name))
-        data = c.fetchone()
-
-        # construction de la réponse
-        if data == None:
-            self.send_error(404, "{} {} non trouvée".format(entity_name, name))
+        if pseudo == self.ROOT_LOGIN and self.ROOT_PASSWORD == password:
+            # le compte root ne figure pas dans la bdd mais dans les attributs de la classe
+            return True
         else:
+            verified = True
+            c = conn.cursor()
+            try:
+                sql = (
+                    "SELECT * FROM utilisateurs WHERE pseudo = ? AND pwd = ?",
+                    (pseudo, password),
+                )
+                c.execute(*sql)
+                r = c.fetchone()
+                if r is None:
+                    sql = ("SELECT * FROM utilisateurs WHERE pseudo = ?", (pseudo,))
+                    c.execute(*sql)
+                    r = c.fetchone()
+                    if r is None:
+                        self.send_error(401, "Utilisateur inconnu")
+                        verified = False
+                    else:
+                        self.send_error(401, "Mot de passe incorrect")
+                        verified = False
+            except Exception as SQLError:
+                print(SQLError)
+                self.send_error(400, "Erreur SQL")
+                verified = False
+            return verified
 
-            # on construit un document au format json
-            data = dict(data)
-            info = {
-                "dbpedia": data["volcano"],
-                "wiki": data["wiki"],
-                "abstract": data["abstract"],
-                "photo": data["photo"],
-                "other": {
-                    "lat": data["lat"],
-                    "lon": data["lon"],
-                    "height": data["elevation"],
-                    "date": data["eruption_date"],
-                    "year": data["eruption_year"],
-                },
-            }
-            # envoi de la réponse
-            self.send_json(info)
+    def appartient(self, comment_id, pseudo, password):
+        """Vérifie un utilisateur a les droits pour supprimer un commentaire"""
 
-    def send(self, body, headers=[]):
+        if (
+            pseudo == self.ROOT_LOGIN and password == self.ROOT_PASSWORD
+        ):  # le super utilisateur à tous les droits
+            return True
 
-        # on encode la chaine de caractères à envoyer
-        encoded = bytes(body, "UTF-8")
+        else:
+            b = True  # True si l'utilisateur a les droits sur le commentaire False sinon
+            c = conn.cursor()
+            try:
+                # On vérifie si le commentaire existe
+                req = ("SELECT * FROM commentaires WHERE id = ?", (comment_id,))
+                c.execute(*req)
+                r = c.fetchone()
 
-        # on envoie la ligne de statut
-        self.send_response(200)
+                if r is None:
+                    b = False
+                    self.send_error(404, "Le commentaire n'existe pas")
 
-        # on envoie les lignes d'entête et la ligne vide
-        [self.send_header(*t) for t in headers]
-        self.send_header("Content-Length", int(len(encoded)))
-        self.end_headers()
+                else:  # il existe
+                    req = (
+                        "SELECT * FROM commentaires WHERE id = ? AND pseudo = ?",
+                        (comment_id, pseudo),
+                    )
 
-        # on envoie le corps de la réponse
-        self.wfile.write(encoded)
+                    c.execute(*req)
+                    r = c.fetchone()
+
+                    if r is None:  # Le commentaire n'est pas celui de l'utilisateur
+                        b = False
+                        self.send_error(
+                            401,
+                            "Droits insuffisants",
+                            "Vous n'avez pas la permission pour supprimer ce commentaire",
+                        )
+            except Exception as SQLError:
+                print(SQLError)
+                self.send_error(400, "Erreur SQL")
+                b = False
+            return b
 
     def parse_qs(self, query_string):
         """Parse la requête et renvoie un dictionnaire de paramètres"""
@@ -346,82 +421,10 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         print("params =", self.params)
 
 
-    def est_connectee(self, pseudo, password):
-        """Vérifie si un utilisateur est connecté"""
-
-        if pseudo == self.ROOT_LOGIN and self.ROOT_PASSWORD == password:
-            # le compte root ne figure pas dans la bdd mais dans les attributs de la classe
-            return True
-        else:
-            verified = True
-            c = conn.cursor()
-            try:
-                sql = (
-                    "SELECT * FROM utilisateurs WHERE pseudo = ? AND pwd = ?",
-                    (pseudo, password),
-                )
-                c.execute(*sql)
-                r = c.fetchone()
-                if r is None:
-                    sql = ("SELECT * FROM utilisateurs WHERE pseudo = ?", (pseudo,))
-                    c.execute(*sql)
-                    r = c.fetchone()
-                    if r is None:
-                        self.send_error(401, "Utilisateur inconnu")
-                        verified = False
-                    else:
-                        self.send_error(401, "Mot de passe incorrect")
-                        verified = False
-            except Exception as SQLError:
-                print(SQLError)
-                self.send_error(400, "Erreur SQL")
-                verified = False
-            return verified
-        
-    def appartient(self, comment_id, pseudo, password):
-        """Vérifie un utilisateur a les droits pour supprimer un commentaire"""
-
-        if pseudo == self.ROOT_LOGIN and password == self.ROOT_PASSWORD:  # le super utilisateur à tous les droits
-            return True
-
-        else:
-            b = True  # True si l'utilisateur a les droits sur le commentaire False sinon
-            c = conn.cursor()
-            try:
-                # On vérifie si le commentaire existe
-                req = ("SELECT * FROM commentaires WHERE id = ?",(comment_id,))
-                c.execute(*req)
-                r = c.fetchone()
-
-                if r is None:
-                    b = False
-                    self.send_error(404, "Le commentaire n'existe pas")
-
-                else:  # il existe
-                    req = ('SELECT * FROM commentaires WHERE id = ? AND pseudo = ?',(
-                        comment_id, pseudo
-                    ))
-
-                    c.execute(*req)
-                    r = c.fetchone()
-
-                    if r is None:  # Le commentaire n'est pas celui de l'utilisateur
-                        b = False
-                        self.send_error(
-                            401,
-                            "Droits insuffisants",
-                            "Vous n'avez pas la permission pour supprimer ce commentaire",
-                        )
-            except Exception as SQLError:
-                print(SQLError)
-                self.send_error(400, "Erreur SQL")
-                b = False
-            return b
-
-
 def get_timestamp():
     """Retourne le timestamp à l'heure de son activation"""
     return datetime.datetime.timestamp(datetime.datetime.now())
+
 
 def init_db():
     """
