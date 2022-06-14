@@ -379,29 +379,42 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 def get_timestamp():
     """Retourne le timestamp à l'heure de son activation"""
     return datetime.datetime.timestamp(datetime.datetime.now())
-#
-# MODIFIER ICI EN FONCTION DU NOM DE VOTRE PROJET
-#
-# nom des entités traitées par votre projet, au pluriel
-entity_list_name = "volcans"
+    
+def init_db():
+    """
+    Méthode qui initialise les tables utilisateurs et commentaires de la base de données
+    """
+    c = conn.cursor()
+    try:
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS commentaires (id INTEGER PRIMARY KEY AUTOINCREMENT, pseudo TEXT, site TEXT,  date TEXT, message TEXT, timestamp TIME)"
+        )
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS utilisateurs (pseudo TEXT, email TEXT, pwd TEXT)"
+        )
+    except Exception as CreateTableError:
+        print(CreateTableError)
 
 
-# on en déduit le nom des entités au singulier
-entity_name = entity_list_name[:-1]
+### PROGRAMME PRINCIPAL ###
 
-#
-# Connexion à la base de données
-# conn est une variable globale
-#
-dbname = "{}.db".format(entity_list_name)
-conn = sqlite3.connect(dbname)
+if __name__ == "__main__":
 
-# pour récupérer les résultats sous forme d'un dictionnaire
-conn.row_factory = sqlite3.Row
+    entity_list_name = "volcans"
 
+    # on en déduit le nom des entités au singulier
+    entity_name = entity_list_name[:-1]
 
-#
-# Instanciation et lancement du serveur
-#
-httpd = socketserver.TCPServer(("", 8080), RequestHandler)
-httpd.serve_forever()
+    # Connexion à la base de données
+    # conn est une variable globale
+
+    dbname = "{}.db".format(entity_list_name)
+    conn = sqlite3.connect(dbname)
+
+    # pour récupérer les résultats sous forme d'un dictionnaire
+    conn.row_factory = sqlite3.Row
+    init_db()  # création des tables utilisateurs et commentaires si elles n'existent pas
+
+    # Instanciation et lancement du serveur
+    httpd = socketserver.TCPServer(("", 8081), RequestHandler)
+    httpd.serve_forever()
