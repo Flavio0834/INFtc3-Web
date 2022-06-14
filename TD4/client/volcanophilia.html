@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Volcanophilia</title>
+    <link rel="icon" type="image/png" href="images/falcon.png" />
+    <script src="leaflet.js"></script>
+    <script src="apputils.js"></script>
+    <script src="comments.js"></script>
+    <link rel="stylesheet" type="text/css" href="leaflet.css" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" type="text/css" href="comments.css" />
+</head>
+
+<body>
+    <h1> Volcans historiques </h1>
+
+    <div id="map">
+    </div>
+
+    <div id="reponse"></div>
+
+    <button id="show_comments">Commentaires</button>
+
+    <div id="messages"></div>
+
+    <div id="pwd_request" class="popup">
+        <header id="pwd_request_header" class="handle">Entrer le mot de passe</header>
+        <label><span>password : </span><input id="enter_pwd" type="password" /></label>
+        <footer><button id="confirm_pwd">Ok</button></footer>
+    </div>
+
+    <button id="add_comment" class="show_popup" data-popup="message_editor">Laisser un message</button>
+
+    <div id="message_editor" class="resizable popup">
+        <header id="message_editor_header" class="handle">Edition d'un message</header>
+        <label><span>Pseudo : </span><input id="input_pseudo" /></label>
+        <label><span>Password : </span><input id="input_password" type="password" /></label>
+        <label><span>Date de visite : </span><input id="input_date" /></label>
+        <label><span>Message : </span><textarea id="input_message"></textarea></label>
+
+        <footer>
+            <button id="create_message">Envoyer</button>
+            <button id="hide_editor" class="hide_popup">Abandonner</button>
+        </footer>
+    </div>
+
+    <script>
+        // Partie liste des volcans
+
+
+        // variable globale pour le nom du site sélectionné via le marqueur
+        var site_name;
+
+        // Création d'une carte dans la balise div "map",
+        // et position de la vue sur un point donné et un niveau de zoom
+        var map = L.map('map').setView([0, 0], 1);
+
+        // Ajout d'une couche de dalles OpenStreetMap
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+
+
+        // Modifier cette ligne en fonction de votre projet
+        var entity_list_name = 'volcans'
+
+        var xhr = new XMLHttpRequest();
+
+        // cette fonction sera appelée lorsque la réponse du serveur sera disponible
+        xhr.onload = function () {
+
+            // récupération de l'information renvoyée par le serveur
+            var data = JSON.parse(this.responseText);
+
+            // création des options de la liste
+            for (n = 0; n < data.length; n++) {
+                // insertion d'un marqueur à la position du lieu,
+                // attachement d'une popup, capture de l'événement 'clic'
+                // ajout d'une propriété personnalisée au marqueur avec
+                // l'identifiant unique du point d'intérêt
+                L.marker([data[n].lat, data[n].lon]).addTo(map)
+                    .bindPopup('Lieu = ' + data[n].name)
+                    .addEventListener('click', OnMarkerClick)
+                    .idnum = data[n].name;
+            }
+
+        };
+
+        // détails de la requête envoyée au serveur
+        xhr.open('GET', '/' + entity_list_name, true);
+
+        // envoi de la requête
+        xhr.send();
+
+
+        // Partie volcan
+
+        var entity_name = entity_list_name.substring(0, entity_list_name.length - 1);
+
+        function OnMarkerClick(e) {
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                var data = JSON.parse(this.responseText);
+                /* print data to console */
+                console.log(data);
+
+                // Exploitation de la réponse
+                var html = '<div id="flex-container"><img src="' + data.photo + '">';
+                html += '<div id="flex-text-child"><h2><a href="' + data.wiki + '">' + e.target.idnum + '</a></h2>';
+                html += '<div><a href="' + data.dbpedia + '">' + data.dbpedia + '</a><br></div>';
+                html += '<div id="other">';
+                for (k in data.other) {
+                    html += '<span><b>' + k + '</b>: ' + data.other[k] + '</span><br>';
+                }
+                html += '</div></div></div>'
+                html += '<p>' + data.abstract + '</p>'
+
+                document.getElementById('reponse').innerHTML = html;
+            };
+
+
+            site_name = e.target.idnum
+
+            // Envoi de la requête Ajax pour la récupération de la description du lieu de numéro idnum
+            xhr.open('GET', '/description/' + site_name, true);
+            xhr.send();
+
+
+            xhr.open('GET', '/' + entity_name + '/' + e.target.idnum, true);
+            xhr.send();
+        }
+
+        show_comments.addEventListener('click', display_messages);
+        create_message.addEventListener('click', post_message);
+    </script>
+
+</body>
+
+</html>
