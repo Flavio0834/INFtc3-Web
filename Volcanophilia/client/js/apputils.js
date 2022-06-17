@@ -54,6 +54,20 @@ function hide(elt) {
   elt.style.display='none';
 }
 
+/*
+** Affichage d'un popup
+*/
+
+	
+
+function show(elt) {
+  elt.style.visibility='visible';
+}	
+
+function show_bis(elt) {
+  elt.style.display='flow';
+}
+
 
 /*
 ** Envoi d'une requête Ajax

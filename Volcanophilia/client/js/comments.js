@@ -10,7 +10,7 @@
 function display_messages() {
     // On efface le contenu du <div id="messages">
     messages.textContent = '';
-
+    show_bis(messages);
     // On envoie une requête Ajax pour récupérer la liste des messages
     ajax_request('GET', '/commentaires/' + site_name, function () {
 
@@ -69,9 +69,11 @@ function display_message(msg) {
 
         // Affichage du popup de demande de mot de passe
         enter_pwd.value = '';
+        enter_pseudo.value = ''; 
         pwd_request.style.marginTop = window.scrollY + 'px';
         pwd_request.style.display = 'block';
         pwd_request.style.visibility = 'visible';
+        show(confirm_pwd)
 
         // Poursuite de l'opération après entrée du mot de passe
         confirm_pwd.addEventListener('click', function () {
@@ -99,6 +101,7 @@ function display_message(msg) {
                         alert(this.status + ' ' + this.statusText);
                         console.log(this.status, this.statusText);
                     }
+                    display_messages(); 
                 });
         }, { once: true });
     });
@@ -113,31 +116,52 @@ function display_message(msg) {
 ** aux informations entrées par l'utilisateur via les champs de
 ** formulaire présentés par le popup.
 */
-function post_message() {
 
-    // corps et entête HTTP du message
-    let body = { site: site_name }
-        , headers = { 'Content-Type': 'application/json' }
-        ;
+// Création d'un message
+function post_message() {
+    let body = { site: site_name }, headers = { 'Content-Type': 'application/json' };
     ['pseudo', 'password', 'message', 'date'].forEach(k => {
         body[k] = window['input_' + k].value;
     });
-
-    // requête AJAX et traitement de la réponse
     ajax_request('POST', '/commentaire', JSON.stringify(body), headers, function () {
+        console.log(this.status);
         if (this.status == 200) {
             let msg = JSON.parse(this.responseText);
             message_editor.style.display = 'none';
             display_message(msg);
             show_comments.style.visibility = 'visible';
-            display_messages();
         }
         else {
-            let errmsg = (this.statusText == "Missing 'email'") ? 'Unknown user' : this.statusText
-                , status = (this.statusText == "Missing 'email'") ? 401 : this.status
+            let errmsg = this.statusText
+                , status = this.status
                 ;
             alert(status + ' ' + errmsg);
             console.log(status, errmsg);
         }
+        display_messages();
+    });
+}
+
+function post_user() {
+    let headers = { 'Content-Type': 'application/json' };
+    body = {};
+    ['user_pseudo', 'email', 'user_password'].forEach(k => {
+        body[k] = window['input_' + k].value;
+    });
+    ajax_request('POST', '/utilisateur', JSON.stringify(body), headers, function () {
+        if (this.status == 200) {
+            let user = JSON.parse(this.responseText);
+            user_editor.style.display = 'none';
+        }
+        else {
+            let errmsg = this.statusText
+                , status = this.status
+                ;
+            alert(status + ' ' + errmsg);
+            console.log(status, errmsg);
+        }
+
+
+
     });
 }
