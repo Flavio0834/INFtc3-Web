@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css?family=Red+Hat+Display:900&display=swap');
+
+.fire {
+    font-size: 5vw;
+    line-height: 5vw;
+
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 900;
+    background: url("../images/fire.webp");
+    background-size: 40%;
+    background-position: 50% 50%;
+    -webkit-background-clip: text;
+    color: rgba(0, 0, 0, 0.08);
+    animation: zoomout 15s ease 500ms forwards;
+}
+
+@keyframes zoomout {
+    from {
+        background-size: 40%;
+    }
+
+    to {
+        background-size: 10%;
+    }
+}
