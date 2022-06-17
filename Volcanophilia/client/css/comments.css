@@ -58,6 +58,7 @@ article header .delete {
   font-family: Consolas;
   font-size: 13.3px;
   padding: 3px 0.5em;
+  font-family: SourceCode;
 }
 .popup footer {
   display: flex;
