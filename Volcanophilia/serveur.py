@@ -4,6 +4,7 @@ import sqlite3
 import json
 import datetime
 from urllib.parse import unquote_plus, urlparse, parse_qs
+import hashlib
 
 PORT = 8080
 
@@ -262,7 +263,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 c.execute(
                     "INSERT INTO utilisateurs (pseudo, email, pwd) VALUES (?,?,?)",
-                    [data["user_pseudo"], data["email"], data["user_password"]],
+                    [data["user_pseudo"], data["email"], hash(data["user_password"])],
                 )
                 conn.commit()
                 self.send_response(200)
@@ -324,7 +325,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             try:
                 sql = (
                     "SELECT * FROM utilisateurs WHERE pseudo = ? AND pwd = ?",
-                    (pseudo, password),
+                    (pseudo, hash(password)),
                 )
                 c.execute(*sql)
                 r = c.fetchone()
@@ -481,6 +482,10 @@ def init_db():
         )
     except Exception as CreateTableError:
         print(CreateTableError)
+
+
+def hash(pwd):
+    return hashlib.sha512(pwd.encode()).hexdigest()
 
 
 ### PROGRAMME PRINCIPAL ###
