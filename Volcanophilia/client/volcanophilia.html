@@ -35,9 +35,9 @@
 
     <div id="message_editor" class="resizable popup">
         <header id="message_editor_header" class="handle">Edition d'un message</header>
-        <label><input id="input_pseudo" placeholder="Pseudo"/></label>
+        <label><input id="input_pseudo" placeholder="Pseudo" /></label>
         <label><input id="enter_pwd" type="password" placeholder="Mot de passe" /></label>
-        <label><input id="input_date" placeholder="Date de visite"/></label>
+        <label><input id="input_date" placeholder="Date de visite" /></label>
         <label><textarea id="input_message" placeholder="Message"></textarea></label>
 
         <footer>
@@ -99,7 +99,7 @@
 
         // Création d'une carte dans la balise div "map",
         // et position de la vue sur un point donné et un niveau de zoom
-        var map = L.map('map').setView([0, 0], 1.5);
+        var map = L.map('map').setView([0, 0], 1);
 
         // Ajout d'une couche de dalles OpenStreetMap
         L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
