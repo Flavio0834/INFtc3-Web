@@ -158,11 +158,11 @@
                 // affichage dans la zone 'description' du nom (reprise dans le popup)
                 // et de la description récupérée par l'appel au serveur
                 var html2 = '<div><i>' + html + '<h2><a class=lien href="' + data.wiki + '">' + site_name + '</a></h2></i><br>';
-                html2 += "Altitude: " + data.other.elevation + ' m' + '<br>';
+                html2 += "Altitude: " + data.other.height + ' m' + '<br>';
                 html2 += "GPS → "
                 html2 += "Lat :" + data.other.lat
                 html2 += "  |  Lon : " + data.other.lon + '<br>';
-                html2 += "Année d'éruption : " + data.other.eruption_year + '<br><br></div>';
+                html2 += "Année d'éruption : " + data.other.year + '<br><br></div>';
                 html2 += '<t>' + data.abstract + '</t>';
                 html2 += '<br><br><t class="lien">Read more on : ' + '<a href="' + data.dbpedia + '" style ="font-style: italic;font-size: smaller;">' + (data.dbpedia.split('/'))[4] + ' </a></t>'
                 description.innerHTML = html2;
