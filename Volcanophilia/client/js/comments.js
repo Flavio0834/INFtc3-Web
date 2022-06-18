@@ -21,6 +21,7 @@ function display_messages() {
         data.forEach(display_message);
 
     });
+    messages.style = "";
 }
 
 
@@ -69,7 +70,7 @@ function display_message(msg) {
 
         // Affichage du popup de demande de mot de passe
         enter_pwd.value = '';
-        enter_pseudo.value = ''; 
+        enter_pseudo.value = '';
         pwd_request.style.marginTop = window.scrollY + 'px';
         pwd_request.style.display = 'block';
         pwd_request.style.visibility = 'visible';
@@ -101,7 +102,7 @@ function display_message(msg) {
                         alert(this.status + ' ' + this.statusText);
                         console.log(this.status, this.statusText);
                     }
-                    display_messages(); 
+                    display_messages();
                 });
         }, { once: true });
     });
