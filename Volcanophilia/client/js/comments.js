@@ -85,7 +85,7 @@ function display_message(msg) {
             // demande de suppression du message
             ajax_request('DELETE', '/commentaire/' + msg.id,
                 JSON.stringify({
-                    pseudo: msg.pseudo,
+                    pseudo: enter_pseudo.value,
                     password: enter_pwd.value,
                 }),
                 { 'Content-Type': 'application/json' },
