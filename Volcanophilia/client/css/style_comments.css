@@ -23,13 +23,6 @@
     border: 1px solid whitesmoke;
 }
 
-#confirm_pwd {
-    border-radius: 5px;
-    border: 1px solid;
-    background-color: #ccc;
-}
-
-
 article .delete {
     right: 0.5rem;
     float: right;
